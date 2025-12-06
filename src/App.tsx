@@ -133,11 +133,46 @@ const RiskBadge = ({ level }: { level: RiskLevel }) => {
 export default function SocialMonitor() {
   const [isConnected, setIsConnected] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [keywords, setKeywords] = useState<string[]>(SAMPLE_KEYWORDS);
+  // Persistence: Keywords
+  const [keywords, setKeywords] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('monitor_keywords');
+      return saved ? JSON.parse(saved) : SAMPLE_KEYWORDS;
+    } catch (e) { return SAMPLE_KEYWORDS; }
+  });
+
+  // Persistence: Feed (Day-scoped)
+  const [feed, setFeed] = useState<DataItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('monitor_feed');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.length > 0) {
+          const lastItemDate = new Date(parsed[0].timestamp).toDateString();
+          const today = new Date().toDateString();
+          if (lastItemDate === today) return parsed;
+        }
+      }
+    } catch (e) { }
+    return [];
+  });
+
+  // Persistence: Stats
+  const [stats, setStats] = useState(() => {
+    try {
+      const saved = localStorage.getItem('monitor_stats');
+      if (saved) return JSON.parse(saved);
+    } catch (e) { }
+    return { total: 0, negative: 0, highRisk: 0 };
+  });
+
+  // Save Effects
+  useEffect(() => { localStorage.setItem('monitor_keywords', JSON.stringify(keywords)); }, [keywords]);
+  useEffect(() => { localStorage.setItem('monitor_feed', JSON.stringify(feed)); }, [feed]);
+  useEffect(() => { localStorage.setItem('monitor_stats', JSON.stringify(stats)); }, [stats]);
+
   const [newKeyword, setNewKeyword] = useState('');
-  const [feed, setFeed] = useState<DataItem[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [stats, setStats] = useState({ total: 0, negative: 0, highRisk: 0 });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -195,7 +230,7 @@ export default function SocialMonitor() {
     addLog(logMsg, newItem.riskLevel === 'critical' ? 'warning' : 'info');
 
     setFeed(prev => [newItem, ...prev].slice(0, 100));
-    setStats(prev => ({
+    setStats((prev: { total: number; negative: number; highRisk: number }) => ({
       total: prev.total + 1,
       negative: prev.negative + (newItem.sentiment === 'negative' ? 1 : 0),
       highRisk: prev.highRisk + (['high', 'critical'].includes(newItem.riskLevel) ? 1 : 0)
