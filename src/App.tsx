@@ -376,15 +376,8 @@ export default function SocialMonitor() {
                       value={newKeyword}
                       onChange={(e) => setNewKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
-                    <input
-                      type="text"
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
                       placeholder="添加关键词..."
                       className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                    />
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
                     />
                     <button onClick={handleAddKeyword} className="bg-indigo-600 text-white px-3 py-2 rounded text-sm">
                       +
